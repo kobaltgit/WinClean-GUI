@@ -31,7 +31,7 @@ class SettingsDialog(QDialog):
         ok_button.clicked.connect(self.accept)
         cancel_button = QPushButton("Cancel")
         cancel_button.clicked.connect(self.reject)
-        
+
         button_layout.addStretch()
         button_layout.addWidget(ok_button)
         button_layout.addWidget(cancel_button)
@@ -50,7 +50,7 @@ class SettingsDialog(QDialog):
         self.rb_age_spinbox = QSpinBox()
         self.rb_age_spinbox.setRange(1, 365)
         self.rb_age_spinbox.setEnabled(False)
-        
+
         self.rb_age_checkbox.setChecked(self.settings.value("recycle_bin_age_enabled", False, type=bool))
         self.rb_age_spinbox.setValue(self.settings.value("recycle_bin_age_days", 30, type=int))
         self.rb_age_spinbox.setEnabled(self.rb_age_checkbox.isChecked())
@@ -58,7 +58,7 @@ class SettingsDialog(QDialog):
 
         layout.addRow(self.rb_age_checkbox, self.rb_age_spinbox)
         return widget
-    
+
     def _create_exclusions_tab(self):
         widget = QWidget()
         layout = QVBoxLayout(widget)
@@ -76,7 +76,7 @@ class SettingsDialog(QDialog):
         add_folder_btn.clicked.connect(self.add_exclusion_folder)
         remove_btn = QPushButton("Remove")
         remove_btn.clicked.connect(self.remove_exclusion)
-        
+
         btn_layout.addWidget(add_file_btn)
         btn_layout.addWidget(add_folder_btn)
         btn_layout.addStretch()
@@ -88,7 +88,7 @@ class SettingsDialog(QDialog):
         widget = QWidget()
         layout = QVBoxLayout(widget)
         layout.addWidget(QLabel("Add custom folders to appear as new buttons on the main screen."))
-        
+
         self.custom_folders_list = QListWidget()
         folders_str = self.settings.value("custom_folders", [], type=list)
         for f_str in folders_str:
@@ -99,7 +99,7 @@ class SettingsDialog(QDialog):
                 self.custom_folders_list.addItem(item)
             except json.JSONDecodeError:
                 continue
-        
+
         layout.addWidget(self.custom_folders_list)
 
         btn_layout = QHBoxLayout()
@@ -107,7 +107,7 @@ class SettingsDialog(QDialog):
         add_btn.clicked.connect(self.add_custom_folder)
         remove_btn = QPushButton("Remove")
         remove_btn.clicked.connect(self.remove_custom_folder)
-        
+
         btn_layout.addWidget(add_btn)
         btn_layout.addStretch()
         btn_layout.addWidget(remove_btn)
@@ -125,11 +125,11 @@ class SettingsDialog(QDialog):
     def remove_exclusion(self):
         for item in self.exclusions_list.selectedItems():
             self.exclusions_list.takeItem(self.exclusions_list.row(item))
-            
+
     def add_custom_folder(self):
         folder_path = QFileDialog.getExistingDirectory(self, "Select a Custom Folder to Clean")
         if not folder_path: return
-        
+
         name, ok = QInputDialog.getText(self, "Folder Name", "Enter a name for this button:")
         if ok and name:
             folder_data = {'name': name, 'path': folder_path}
@@ -145,7 +145,7 @@ class SettingsDialog(QDialog):
         self.settings.setValue("confirm_cleanup", self.confirm_checkbox.isChecked())
         self.settings.setValue("recycle_bin_age_enabled", self.rb_age_checkbox.isChecked())
         self.settings.setValue("recycle_bin_age_days", self.rb_age_spinbox.value())
-        
+
         exclusions = [self.exclusions_list.item(i).text() for i in range(self.exclusions_list.count())]
         self.settings.setValue("exclusions", exclusions)
 
@@ -155,7 +155,7 @@ class SettingsDialog(QDialog):
             folder_data = item.data(Qt.ItemDataRole.UserRole)
             custom_folders.append(json.dumps(folder_data))
         self.settings.setValue("custom_folders", custom_folders)
-        
+
         super().accept()
 
 class Worker(QObject):
@@ -184,7 +184,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.settings = QSettings("WinClean-GUI", "App")
-        
+
         self.setWindowTitle("WinClean-GUI")
         self.setGeometry(100, 100, 600, 700)
 
@@ -229,7 +229,7 @@ class MainWindow(QMainWindow):
                 border-radius: 4px;
             }
         """)
-        
+
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         self.main_layout = QVBoxLayout(central_widget)
@@ -237,27 +237,27 @@ class MainWindow(QMainWindow):
         title_label = QLabel("WinClean-GUI")
         title_label.setObjectName("title")
         self.main_layout.addWidget(title_label)
-        
+
         self.grid_widget = QWidget()
         self.grid_layout = QGridLayout(self.grid_widget)
         self.main_layout.addWidget(self.grid_widget)
-        
+
         self.repopulate_buttons()
-        
+
         self.settings_button = QPushButton("Settings")
         self.settings_button.setIcon(QApplication.style().standardIcon(QStyle.StandardPixmap.SP_FileDialogDetailedView))
         self.settings_button.setCursor(Qt.PointingHandCursor)
         self.settings_button.clicked.connect(self.open_settings_dialog)
         self.main_layout.addWidget(self.settings_button)
-        
+
         self.progress_bar = QProgressBar()
         self.progress_bar.setVisible(False)
         self.main_layout.addWidget(self.progress_bar)
-        
+
         self.log_output = QTextEdit()
         self.log_output.setReadOnly(True)
         self.main_layout.addWidget(self.log_output)
-        
+
         self.append_log("Welcome to WinClean-GUI! Please select an action.")
         self.thread = None
         self.worker = None
@@ -267,20 +267,20 @@ class MainWindow(QMainWindow):
             child = self.grid_layout.takeAt(0)
             if child.widget():
                 child.widget().deleteLater()
-        
+
         self.buttons = {}
         style = QApplication.style()
 
         tasks = [
-            {'name': 'clean_desktop', 'text': 'Clean Desktop', 'func': logic.clean_directory, 'args_provider': lambda: [logic.DIRECTORIES["desktop"][0]], 'tooltip': 'Deletes all files and folders from your desktop.', 'icon': QStyle.StandardPixmap.SP_DesktopIcon, 'destructive': True},
-            {'name': 'clean_temp', 'text': 'Clean Temp Folder', 'func': logic.clean_directory, 'args_provider': lambda: [logic.DIRECTORIES["temp"][0]], 'tooltip': 'Deletes temporary system files.', 'icon': QStyle.StandardPixmap.SP_DirIcon, 'destructive': True},
-            {'name': 'clean_appdata_roaming', 'text': 'Clean AppData Roaming', 'func': logic.clean_directory, 'args_provider': lambda: [logic.DIRECTORIES["appdata_roaming"][0]], 'tooltip': 'Clears roaming application data.', 'icon': QStyle.StandardPixmap.SP_DirIcon, 'destructive': True},
-            {'name': 'clean_appdata_local', 'text': 'Clean Local AppData', 'func': logic.clean_directory, 'args_provider': lambda: [logic.DIRECTORIES["appdata_local"][0]], 'tooltip': 'Clears local application data and cache.', 'icon': QStyle.StandardPixmap.SP_DirIcon, 'destructive': True},
-            {'name': 'empty_recycle_bin', 'text': 'Empty Recycle Bin', 'func_provider': self.get_recycle_bin_function, 'args_provider': self.get_recycle_bin_args, 'tooltip': 'Permanently deletes items in the Recycle Bin.', 'icon': QStyle.StandardPixmap.SP_TrashIcon, 'destructive': True},
-            {'name': 'disk_cleanup', 'text': 'Run Disk Cleanup', 'func': logic.run_disk_cleanup, 'args_provider': lambda: [], 'tooltip': 'Launches the built-in Windows Disk Cleanup utility.', 'icon': QStyle.StandardPixmap.SP_DriveHDIcon, 'destructive': False},
-            {'name': 'disk_defrag', 'text': 'Run Disk Defragmenter', 'func': logic.run_disk_defragmenter, 'args_provider': lambda: [], 'tooltip': 'Launches the Windows Drive Optimizer.', 'icon': QStyle.StandardPixmap.SP_DriveHDIcon, 'destructive': False}
+            {'name': 'clean_desktop', 'text': 'Clean Desktop', 'func': logic.clean_directory, 'args_provider': lambda: [logic.DIRECTORIES["desktop"][0]], 'tooltip': 'Deletes all files and folders from your desktop.', 'icon': QStyle.StandardPixmap.SP_DesktopIcon, 'destructive': True, 'needs_exclusions': True},
+            {'name': 'clean_temp', 'text': 'Clean Temp Folder', 'func': logic.clean_directory, 'args_provider': lambda: [logic.DIRECTORIES["temp"][0]], 'tooltip': 'Deletes temporary system files.', 'icon': QStyle.StandardPixmap.SP_DirIcon, 'destructive': True, 'needs_exclusions': True},
+            {'name': 'clean_appdata_roaming', 'text': 'Clean AppData Roaming', 'func': logic.clean_directory, 'args_provider': lambda: [logic.DIRECTORIES["appdata_roaming"][0]], 'tooltip': 'Clears roaming application data.', 'icon': QStyle.StandardPixmap.SP_DirIcon, 'destructive': True, 'needs_exclusions': True},
+            {'name': 'clean_appdata_local', 'text': 'Clean Local AppData', 'func': logic.clean_directory, 'args_provider': lambda: [logic.DIRECTORIES["appdata_local"][0]], 'tooltip': 'Clears local application data and cache.', 'icon': QStyle.StandardPixmap.SP_DirIcon, 'destructive': True, 'needs_exclusions': True},
+            {'name': 'empty_recycle_bin', 'text': 'Empty Recycle Bin', 'func_provider': self.get_recycle_bin_function, 'args_provider': self.get_recycle_bin_args, 'tooltip': 'Permanently deletes items in the Recycle Bin.', 'icon': QStyle.StandardPixmap.SP_TrashIcon, 'destructive': True, 'needs_exclusions': False},
+            {'name': 'disk_cleanup', 'text': 'Run Disk Cleanup', 'func': logic.run_disk_cleanup, 'args_provider': lambda: [], 'tooltip': 'Launches the built-in Windows Disk Cleanup utility.', 'icon': QStyle.StandardPixmap.SP_DriveHDIcon, 'destructive': False, 'needs_exclusions': False},
+            {'name': 'disk_defrag', 'text': 'Run Disk Defragmenter', 'func': logic.run_disk_defragmenter, 'args_provider': lambda: [], 'tooltip': 'Launches the Windows Drive Optimizer.', 'icon': QStyle.StandardPixmap.SP_DriveHDIcon, 'destructive': False, 'needs_exclusions': False}
         ]
-        
+
         custom_folders_str = self.settings.value("custom_folders", [], type=list)
         for f_str in custom_folders_str:
             folder_data = json.loads(f_str)
@@ -291,7 +291,8 @@ class MainWindow(QMainWindow):
                 'args_provider': lambda p=folder_data['path']: [p],
                 'tooltip': f"Cleans the folder: {folder_data['path']}", 
                 'icon': QStyle.StandardPixmap.SP_DirOpenIcon,
-                'destructive': True
+                'destructive': True,
+                'needs_exclusions': True
             }
             tasks.append(task)
 
@@ -337,11 +338,11 @@ class MainWindow(QMainWindow):
             func = task['func']
         args_provider = task.get('args_provider')
         args = args_provider() if args_provider else []
-        
+
         kwargs = {}
-        if func == logic.clean_directory:
+        if task.get('needs_exclusions', False):
             kwargs['exclusions'] = self.settings.value("exclusions", [], type=list)
-        
+
         self.toggle_buttons(False)
         self.progress_bar.setValue(0)
         is_progress_task = "progress_callback" in func.__code__.co_varnames
@@ -374,7 +375,7 @@ class MainWindow(QMainWindow):
         self.append_log(f"Finished: {task_name}.")
         self.progress_bar.setValue(100)
         self.toggle_buttons(True)
-        
+
     def toggle_buttons(self, enabled):
         for button in self.buttons.values():
             button.setEnabled(enabled)
@@ -383,7 +384,7 @@ class MainWindow(QMainWindow):
 if __name__ == "__main__":
     if not logic.is_admin():
         logic.run_as_admin()
-    
+
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()

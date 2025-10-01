@@ -44,8 +44,10 @@ DIRECTORIES = {
 
 def clean_directory(directory, exclusions=None, progress_callback=None):
     """
-    Очищает указанную директорию, пропуская пути из списка исключений.
-    
+    Рекурсивно очищает указанную директорию, пропуская пути из списка исключений.
+    Сначала удаляет все не-исключенные файлы, затем пытается удалить пустые папки.
+    Папки, содержащие исключенные элементы, останутся нетронутыми.
+
     :param directory: Путь к директории для очистки.
     :param exclusions: Список путей (файлов/папок), которые нужно пропустить.
     :param progress_callback: Функция обратного вызова для обновления прогресса.
@@ -54,33 +56,63 @@ def clean_directory(directory, exclusions=None, progress_callback=None):
         logging.warning(f"Directory does not exist: {directory}")
         return
 
-    # Нормализуем пути исключений для корректного сравнения
-    exclusions = [os.path.normpath(ex).lower() for ex in exclusions or []]
-    
-    try:
-        items_to_delete = []
-        # Сначала собираем список того, что нужно удалить, проверяя исключения
-        for entry in os.scandir(directory):
-            normalized_path = os.path.normpath(entry.path).lower()
-            # Проверяем, не начинается ли путь элемента с одного из путей исключений
-            if not any(normalized_path.startswith(ex_path) for ex_path in exclusions):
-                items_to_delete.append(entry)
+    # Нормализуем пути исключений для корректного сравнения (используем set для быстрой проверки)
+    exclusions = {os.path.normpath(ex).lower() for ex in exclusions or []}
 
-        total_items = len(items_to_delete)
-        for i, entry in enumerate(items_to_delete):
-            try:
-                if entry.is_file() or entry.is_symlink():
-                    os.unlink(entry.path)
-                elif entry.is_dir():
-                    shutil.rmtree(entry.path)
-            except Exception as e:
-                logging.error(f"Error deleting {entry.path}: {e}")
-            
-            if progress_callback:
-                progress_callback(i + 1, total_items)
+    files_to_delete = []
+    dirs_to_process = []
 
-    except Exception as e:
-        logging.error(f"Error accessing directory {directory}: {e}")
+    # Шаг 1: Собрать список всех файлов и папок для потенциального удаления
+    # Проходим по дереву каталогов сверху вниз
+    for root, dirs, files in os.walk(directory, topdown=True):
+        # Оптимизация: если текущая папка находится в исключениях, не сканируем ее содержимое
+        if os.path.normpath(root).lower() in exclusions:
+            dirs[:] = []  # Не спускаться в подпапки
+            continue
+
+        # Собираем файлы для удаления
+        for name in files:
+            file_path = os.path.join(root, name)
+            if os.path.normpath(file_path).lower() not in exclusions:
+                files_to_delete.append(file_path)
+
+        # Собираем папки для последующей обработки
+        for name in dirs:
+            dir_path = os.path.join(root, name)
+            # Добавляем только те папки, которые сами не являются исключением
+            if os.path.normpath(dir_path).lower() not in exclusions:
+                dirs_to_process.append(dir_path)
+
+    total_items = len(files_to_delete) + len(dirs_to_process)
+    processed_count = 0
+
+    # Шаг 2: Удалить все собранные файлы
+    for file_path in files_to_delete:
+        try:
+            os.unlink(file_path)
+        except OSError as e:
+            logging.error(f"Error deleting file {file_path}: {e}")
+
+        processed_count += 1
+        if progress_callback:
+            progress_callback(processed_count, total_items)
+
+    # Шаг 3: Попытаться удалить папки, начиная с самых глубоких
+    # Сортировка по длине пути в обратном порядке гарантирует, что мы сначала обработаем дочерние папки
+    dirs_to_process.sort(key=len, reverse=True)
+
+    for dir_path in dirs_to_process:
+        try:
+            os.rmdir(dir_path)
+        except OSError:
+            # Эта ошибка ожидаема, если папка не пуста (т.е. содержит исключенный файл или папку).
+            # Просто пропускаем ее.
+            logging.info(f"Directory not empty or could not be removed (likely contains exclusions): {dir_path}")
+            pass
+
+        processed_count += 1
+        if progress_callback:
+            progress_callback(processed_count, total_items)
 
 
 def empty_recycle_bin():
@@ -98,10 +130,10 @@ def empty_recycle_bin_by_age(days):
     try:
         recycle_bin = winshell.recycle_bin()
         cutoff_date = datetime.now() - timedelta(days=days)
-        
+
         # winshell может возвращать элементы в виде генератора, преобразуем в список
         items_to_check = list(recycle_bin)
-        
+
         for item in items_to_check:
             # recycle_date() может быть None для некоторых элементов
             if item.recycle_date() and item.recycle_date() < cutoff_date:
