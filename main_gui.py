@@ -1,6 +1,7 @@
 import sys
 import json
 from PySide6.QtCore import QObject, Signal, QThread, QSettings, QSize, Qt
+from PySide6.QtGui import QIcon, QAction
 from PySide6.QtWidgets import (QApplication, QMainWindow, QPushButton, QVBoxLayout, 
                                QWidget, QLabel, QTextEdit, QProgressBar, QGridLayout,
                                QDialog, QCheckBox, QMessageBox, QHBoxLayout, QStyle,
@@ -188,6 +189,8 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("WinClean-GUI")
         self.setGeometry(100, 100, 600, 700)
 
+        self._create_menus()
+
         self.setStyleSheet("""
             QWidget {
                 background-color: #2b2b2b;
@@ -244,12 +247,6 @@ class MainWindow(QMainWindow):
 
         self.repopulate_buttons()
 
-        self.settings_button = QPushButton("Settings")
-        self.settings_button.setIcon(QApplication.style().standardIcon(QStyle.StandardPixmap.SP_FileDialogDetailedView))
-        self.settings_button.setCursor(Qt.PointingHandCursor)
-        self.settings_button.clicked.connect(self.open_settings_dialog)
-        self.main_layout.addWidget(self.settings_button)
-
         self.progress_bar = QProgressBar()
         self.progress_bar.setVisible(False)
         self.main_layout.addWidget(self.progress_bar)
@@ -261,6 +258,32 @@ class MainWindow(QMainWindow):
         self.append_log("Welcome to WinClean-GUI! Please select an action.")
         self.thread = None
         self.worker = None
+
+    def _create_menus(self):
+        menu_bar = self.menuBar()
+
+        # Меню "Edit"
+        edit_menu = menu_bar.addMenu("&Edit")
+        icon = QApplication.style().standardIcon(QStyle.StandardPixmap.SP_FileDialogDetailedView)
+        self.settings_action = QAction(icon, "&Settings...", self)
+        self.settings_action.triggered.connect(self.open_settings_dialog)
+        edit_menu.addAction(self.settings_action)
+
+        # Меню "Help"
+        help_menu = menu_bar.addMenu("&Help")
+        about_action = QAction("&About", self)
+        about_action.triggered.connect(self.show_about_dialog)
+        help_menu.addAction(about_action)
+
+
+    def show_about_dialog(self):
+        about_text = """
+        <h3>WinClean-GUI</h3>
+        <p>A powerful system maintenance and cleanup utility for Windows.</p>
+        <p>This application is open source and available on GitHub.</p>
+        <p><b>Repository:</b> <a style="color: #3399ff;" href='https://github.com/kobaltgit/WinClean-GUI'>https://github.com/kobaltgit/WinClean-GUI</a></p>
+        """
+        QMessageBox.about(self, "About WinClean-GUI", about_text)
 
     def repopulate_buttons(self):
         while self.grid_layout.count():
@@ -379,13 +402,18 @@ class MainWindow(QMainWindow):
     def toggle_buttons(self, enabled):
         for button in self.buttons.values():
             button.setEnabled(enabled)
-        self.settings_button.setEnabled(enabled)
+        self.settings_action.setEnabled(enabled)
 
 if __name__ == "__main__":
     if not logic.is_admin():
         logic.run_as_admin()
 
     app = QApplication(sys.argv)
+
+    # Устанавливаем иконку для всего приложения
+    icon = QIcon("assets/app_icon.ico")
+    app.setWindowIcon(icon)
+
     window = MainWindow()
     window.show()
     sys.exit(app.exec())
