@@ -2,5 +2,4 @@
 
 PySide6
 winshell
-tqdm
 pywin32

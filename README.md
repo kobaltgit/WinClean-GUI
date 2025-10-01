@@ -14,13 +14,50 @@ This project takes a functional command-line script and elevates it into a user-
 - **System Tools Integration**:
   - Empty the Recycle Bin with a single click.
   - Launch Windows Disk Cleanup (`cleanmgr.exe`).
-  - Run the Disk Defragmenter and Optimizer (`defrag.exe`).
+  - Run the Disk Defragmenter and Optimizer (`dfrgui.exe`).
 - **Safe and Transparent**: The application requires administrative privileges only for necessary tasks and logs all operations for review.
 - **Built with Python**: Developed using Python and the powerful PySide6 framework for the GUI.
+- **Customizable**: Add your own folders to the cleanup list and create exclusion lists to protect important files.
+
+## 📸 Screenshot
+
+<img src="https://i.ibb.co/qFPXq1sN/2025-10-01-110825.png" alt="2025-10-01-110825" border="0">
+
+
+![WinClean-GUI Screenshot](docs/screenshot.png)
+
 
 ## 🚀 Getting Started
 
-(Здесь мы позже добавим инструкции по установке и запуску)
+Follow these instructions to get a copy of the project up and running on your local machine.
+
+### Prerequisites
+
+- [Python 3.8+](https://www.python.org/downloads/)
+- `pip` (usually comes with Python)
+
+### Installation & Running
+
+1.  **Clone the repository:**
+    ```sh
+    git clone https://github.com/kobaltgit/WinClean-GUI
+    ```
+
+2.  **Navigate to the project directory:**
+    ```sh
+    cd WinClean-GUI
+    ```
+
+3.  **Install the required dependencies:**
+    ```sh
+    pip install -r requirements.txt
+    ```
+
+4.  **Run the application:**
+    ```sh
+    python main_gui.py
+    ```
+    > **Note:** The application will request administrative privileges upon launch to perform system-level tasks. Please approve the UAC prompt.
 
 ## 🤝 Contributing
 
