@@ -24,9 +24,6 @@ This project takes a functional command-line script and elevates it into a user-
 <img src="https://i.ibb.co/cccGNLB3/2025-10-01-120225.png" alt="2025-10-01-120225" border="0">
 
 
-![WinClean-GUI Screenshot](docs/screenshot.png)
-
-
 ## 🚀 Getting Started
 
 Follow these instructions to get a copy of the project up and running on your local machine.
