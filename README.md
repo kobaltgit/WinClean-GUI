@@ -21,7 +21,7 @@ This project takes a functional command-line script and elevates it into a user-
 
 ## 📸 Screenshot
 
-<img src="https://i.ibb.co/qFPXq1sN/2025-10-01-110825.png" alt="2025-10-01-110825" border="0">
+<img src="https://i.ibb.co/cccGNLB3/2025-10-01-120225.png" alt="2025-10-01-120225" border="0">
 
 
 ![WinClean-GUI Screenshot](docs/screenshot.png)
