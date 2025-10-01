@@ -1,0 +1,6 @@
+# --- Файл: requirements.txt ---
+
+PySide6
+winshell
+tqdm
+pywin32
